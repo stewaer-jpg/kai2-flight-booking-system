@@ -1,8 +1,6 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 
-const sql = neon(process.env.DATABASE_URL!);
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const from = searchParams.get('from') || '';
@@ -12,6 +10,7 @@ export async function GET(request: Request) {
   const cabin = searchParams.get('cabin') || 'Economy';
 
   try {
+    const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`
       SELECT 
         f.*,

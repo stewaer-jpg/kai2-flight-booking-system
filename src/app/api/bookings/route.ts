@@ -1,13 +1,12 @@
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 
-const sql = neon(process.env.DATABASE_URL!);
-
 export async function POST(request: Request) {
   const body = await request.json();
   const { flight_id, passenger_name, passenger_email, passengers, total_price } = body;
 
   try {
+    const sql = neon(process.env.DATABASE_URL!);
     const ref = 'KAI' + Math.random().toString(36).substring(2, 8).toUpperCase();
     const rows = await sql`
       INSERT INTO bookings (
@@ -31,6 +30,7 @@ export async function GET(request: Request) {
   const ref = searchParams.get('ref') || '';
 
   try {
+    const sql = neon(process.env.DATABASE_URL!);
     const rows = await sql`
       SELECT b.*, 
         f.flight_number, f.airline, f.origin_code, f.destination_code,

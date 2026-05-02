@@ -1,9 +1,10 @@
 import { neon } from '@neondatabase/serverless';
-const sql = neon(process.env.DATABASE_URL!);
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    const sql = neon(process.env.DATABASE_URL!);
+
     await sql`
       CREATE TABLE IF NOT EXISTS airports (
         id SERIAL PRIMARY KEY,
@@ -172,14 +173,15 @@ export async function GET() {
       }
     }
 
-const totalFlights = await sql`SELECT COUNT(*) as count FROM flights`;
-const totalAirports = await sql`SELECT COUNT(*) as count FROM airports`;
+    const totalFlights = await sql`SELECT COUNT(*) as count FROM flights`;
+    const totalAirports = await sql`SELECT COUNT(*) as count FROM airports`;
 
-return NextResponse.json({
-  message: '✅ Database seeded successfully!',
-  airports: totalAirports[0].count,
-  flights: totalFlights[0].count,
-});
+    return NextResponse.json({
+      message: '✅ Database seeded successfully!',
+      airports: totalAirports[0].count,
+      flights: totalFlights[0].count,
+    });
+
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: String(error) }, { status: 500 });
