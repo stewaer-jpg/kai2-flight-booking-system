@@ -172,15 +172,14 @@ export async function GET() {
       }
     }
 
-    const totalFlights = await sql`SELECT COUNT(*) FROM flights`;
-    const totalAirports = await sql`SELECT COUNT(*) FROM airports`;
+const totalFlights = await sql`SELECT COUNT(*) as count FROM flights`;
+const totalAirports = await sql`SELECT COUNT(*) as count FROM airports`;
 
-    return NextResponse.json({
-      message: '✅ Database seeded successfully!',
-      airports: totalAirports.rows[0].count,
-      flights: totalFlights.rows[0].count,
-    });
-
+return NextResponse.json({
+  message: '✅ Database seeded successfully!',
+  airports: totalAirports[0].count,
+  flights: totalFlights[0].count,
+});
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: String(error) }, { status: 500 });

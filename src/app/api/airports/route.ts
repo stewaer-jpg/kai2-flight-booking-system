@@ -1,12 +1,14 @@
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+
+const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || '';
 
   try {
-    const { rows } = await sql`
+    const rows = await sql`
       SELECT code, name, country, city
       FROM airports
       WHERE 
