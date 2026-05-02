@@ -156,4 +156,32 @@ export async function GET() {
                 flight_number, airline, airline_code,
                 origin_code, destination_code,
                 departure_date, departure_time, arrival_time,
-                duration, price, cabin_class,
+                duration, price, cabin_class, available_seats, stops
+              ) VALUES (
+                ${airlineCode + flightNum},
+                ${airlineName},
+                ${airlineCode},
+                ${orig}, ${dest},
+                ${dateStr}, ${dep}, ${arr},
+                ${dur}, ${price}, ${cabin}, ${seats}, 0
+              )
+            `;
+          }
+        }
+      }
+    }
+
+    const totalFlights = await sql`SELECT COUNT(*) FROM flights`;
+    const totalAirports = await sql`SELECT COUNT(*) FROM airports`;
+
+    return NextResponse.json({
+      message: '✅ Database seeded successfully!',
+      airports: totalAirports.rows[0].count,
+      flights: totalFlights.rows[0].count,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
