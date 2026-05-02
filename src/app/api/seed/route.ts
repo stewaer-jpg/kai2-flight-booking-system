@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Create tables
     await sql`
       CREATE TABLE IF NOT EXISTS airports (
         id SERIAL PRIMARY KEY,
@@ -47,13 +46,13 @@ export async function GET() {
       )
     `;
 
-    // Seed airports
-    await sql`DELETE FROM airports`;
     await sql`
       INSERT INTO airports (code, name, city, country) VALUES
         ('MNL', 'Ninoy Aquino International Airport', 'Manila', 'Philippines'),
         ('CEB', 'Mactan-Cebu International Airport', 'Cebu', 'Philippines'),
         ('DVO', 'Francisco Bangoy International Airport', 'Davao', 'Philippines'),
+        ('ILO', 'Iloilo International Airport', 'Iloilo', 'Philippines'),
+        ('BCD', 'Bacolod-Silay Airport', 'Bacolod', 'Philippines'),
         ('SIN', 'Singapore Changi Airport', 'Singapore', 'Singapore'),
         ('KUL', 'Kuala Lumpur International Airport', 'Kuala Lumpur', 'Malaysia'),
         ('HKG', 'Hong Kong International Airport', 'Hong Kong', 'China'),
@@ -65,84 +64,96 @@ export async function GET() {
         ('BKK', 'Suvarnabhumi Airport', 'Bangkok', 'Thailand'),
         ('TPE', 'Taoyuan International Airport', 'Taipei', 'Taiwan'),
         ('PER', 'Perth Airport', 'Perth', 'Australia'),
-        ('CGK', 'Soekarno-Hatta International Airport', 'Jakarta', 'Indonesia')
+        ('CGK', 'Soekarno-Hatta International Airport', 'Jakarta', 'Indonesia'),
+        ('SGN', 'Tan Son Nhat International Airport', 'Ho Chi Minh City', 'Vietnam'),
+        ('HAN', 'Noi Bai International Airport', 'Hanoi', 'Vietnam'),
+        ('MFM', 'Macau International Airport', 'Macau', 'China')
       ON CONFLICT (code) DO NOTHING
     `;
 
-    // Seed flights - generate for next 30 days
-    await sql`DELETE FROM flights`;
-
-    const routes = [
-      ['MNL','SIN','PR','Philippine Airlines','PR'],
-      ['MNL','SIN','5J','Cebu Pacific','5J'],
-      ['MNL','HKG','CX','Cathay Pacific','CX'],
-      ['MNL','NRT','PR','Philippine Airlines','PR'],
-      ['MNL','KUL','AK','AirAsia','AK'],
-      ['MNL','DXB','EK','Emirates','EK'],
-      ['MNL','LHR','BA','British Airways','BA'],
-      ['MNL','SYD','QF','Qantas','QF'],
-      ['MNL','BKK','TG','Thai Airways','TG'],
-      ['MNL','ICN','KE','Korean Air','KE'],
-      ['CEB','SIN','5J','Cebu Pacific','5J'],
-      ['CEB','HKG','CX','Cathay Pacific','CX'],
-      ['CEB','KUL','AK','AirAsia','AK'],
-      ['SIN','NRT','SQ','Singapore Airlines','SQ'],
-      ['SIN','LHR','SQ','Singapore Airlines','SQ'],
-      ['HKG','NRT','CX','Cathay Pacific','CX'],
-      ['DXB','LHR','EK','Emirates','EK'],
+    const routes: [string, string, string, string][] = [
+      ['MNL','SIN','PR','Philippine Airlines'],
+      ['MNL','SIN','5J','Cebu Pacific'],
+      ['MNL','SIN','Z2','AirAsia Philippines'],
+      ['MNL','HKG','CX','Cathay Pacific'],
+      ['MNL','HKG','PR','Philippine Airlines'],
+      ['MNL','NRT','PR','Philippine Airlines'],
+      ['MNL','NRT','NH','ANA'],
+      ['MNL','KUL','AK','AirAsia'],
+      ['MNL','KUL','MH','Malaysia Airlines'],
+      ['MNL','DXB','EK','Emirates'],
+      ['MNL','LHR','BA','British Airways'],
+      ['MNL','SYD','QF','Qantas'],
+      ['MNL','BKK','TG','Thai Airways'],
+      ['MNL','BKK','FD','Thai AirAsia'],
+      ['MNL','ICN','KE','Korean Air'],
+      ['MNL','ICN','OZ','Asiana Airlines'],
+      ['MNL','TPE','CI','China Airlines'],
+      ['MNL','CGK','GA','Garuda Indonesia'],
+      ['MNL','SGN','VN','Vietnam Airlines'],
+      ['CEB','SIN','5J','Cebu Pacific'],
+      ['CEB','HKG','CX','Cathay Pacific'],
+      ['CEB','KUL','AK','AirAsia'],
+      ['CEB','NRT','PR','Philippine Airlines'],
+      ['CEB','ICN','KE','Korean Air'],
+      ['SIN','NRT','SQ','Singapore Airlines'],
+      ['SIN','LHR','SQ','Singapore Airlines'],
+      ['SIN','SYD','SQ','Singapore Airlines'],
+      ['SIN','DXB','EK','Emirates'],
+      ['HKG','NRT','CX','Cathay Pacific'],
+      ['DXB','LHR','EK','Emirates'],
     ];
 
     const cabins = ['Economy', 'Business', 'First'];
+
     const basePrices: Record<string, number> = {
-      'MNL-SIN': 4500, 'MNL-HKG': 6200, 'MNL-NRT': 14000,
-      'MNL-KUL': 3800, 'MNL-DXB': 18000, 'MNL-LHR': 28000,
-      'MNL-SYD': 22000, 'MNL-BKK': 5500, 'MNL-ICN': 9800,
-      'CEB-SIN': 5200, 'CEB-HKG': 7000, 'CEB-KUL': 4200,
-      'SIN-NRT': 12000, 'SIN-LHR': 22000, 'HKG-NRT': 10000,
-      'DXB-LHR': 15000,
+      'MNL-SIN': 4500,  'MNL-HKG': 6200,  'MNL-NRT': 14000,
+      'MNL-KUL': 3800,  'MNL-DXB': 18000, 'MNL-LHR': 28000,
+      'MNL-SYD': 22000, 'MNL-BKK': 5500,  'MNL-ICN': 9800,
+      'MNL-TPE': 8500,  'MNL-CGK': 6000,  'MNL-SGN': 5000,
+      'CEB-SIN': 5200,  'CEB-HKG': 7000,  'CEB-KUL': 4200,
+      'CEB-NRT': 15000, 'CEB-ICN': 10500,
+      'SIN-NRT': 12000, 'SIN-LHR': 22000, 'SIN-SYD': 18000,
+      'SIN-DXB': 14000, 'HKG-NRT': 10000, 'DXB-LHR': 15000,
     };
 
-    const times = [
-      ['06:00','08:30','2h 30m'], ['08:15','11:00','2h 45m'],
-      ['10:30','13:15','2h 45m'], ['13:00','15:45','2h 45m'],
-      ['15:30','18:20','2h 50m'], ['17:45','20:30','2h 45m'],
-      ['20:00','22:45','2h 45m'], ['22:30','01:15','2h 45m'],
+    const schedules = [
+      ['05:00', '07:30', '2h 30m'],
+      ['07:15', '09:50', '2h 35m'],
+      ['09:30', '12:10', '2h 40m'],
+      ['11:45', '14:20', '2h 35m'],
+      ['13:00', '15:40', '2h 40m'],
+      ['15:20', '17:55', '2h 35m'],
+      ['17:30', '20:10', '2h 40m'],
+      ['19:45', '22:20', '2h 35m'],
+      ['21:00', '23:40', '2h 40m'],
+      ['22:55', '01:30', '2h 35m'],
     ];
 
     let flightNum = 100;
+
     for (const [orig, dest, airlineCode, airlineName] of routes) {
       const key = `${orig}-${dest}`;
       const basePrice = basePrices[key] || 8000;
 
-      for (let day = 0; day < 30; day++) {
+      for (let day = 0; day < 60; day++) {
         const date = new Date();
         date.setDate(date.getDate() + day);
         const dateStr = date.toISOString().split('T')[0];
 
-        for (const [dep, arr, dur] of times.slice(0, 4)) {
+        const dailySchedules = schedules.slice(0, Math.floor(3 + Math.random() * 4));
+
+        for (const [dep, arr, dur] of dailySchedules) {
           for (const cabin of cabins) {
-            const multiplier = cabin === 'Business' ? 3.2 : cabin === 'First' ? 6 : 1;
-            const priceVariation = 0.85 + Math.random() * 0.3;
-            const price = Math.round(basePrice * multiplier * priceVariation);
-            const seats = Math.floor(20 + Math.random() * 80);
+            const multiplier = cabin === 'Business' ? 3.2 : cabin === 'First' ? 6.5 : 1;
+            const variation = 0.8 + Math.random() * 0.4;
+            const price = Math.round(basePrice * multiplier * variation);
+            const seats = Math.floor(15 + Math.random() * 120);
             flightNum++;
 
             await sql`
-              INSERT INTO flights 
-                (flight_number, airline, airline_code, origin_code, destination_code, 
-                 departure_date, departure_time, arrival_time, duration, price, cabin_class, available_seats, stops)
-              VALUES 
-                (${airlineCode + flightNum}, ${airlineName}, ${airlineCode}, ${orig}, ${dest},
-                 ${dateStr}, ${dep}, ${arr}, ${dur}, ${price}, ${cabin}, ${seats}, 0)
-            `;
-          }
-        }
-      }
-    }
-
-    return NextResponse.json({ message: '✅ Database seeded successfully!' });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
-  }
-}
+              INSERT INTO flights (
+                flight_number, airline, airline_code,
+                origin_code, destination_code,
+                departure_date, departure_time, arrival_time,
+                duration, price, cabin_class,
